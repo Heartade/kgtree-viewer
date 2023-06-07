@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model edge {
+  id                     Int    @id @default(autoincrement())
+  source                 String
+  target                 String
+  node_edge_targetTonode node   @relation("edge_targetTonode", fields: [target], references: [name], onDelete: NoAction, onUpdate: NoAction)
+  node_edge_sourceTonode node   @relation("edge_sourceTonode", fields: [source], references: [name], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([source], map: "edge_src")
+  @@index([target], map: "edge_tgt")
+  @@index([source, target], map: "edge_src_tgt")
+}
+
+model node {
+  name                   String @id
+  edge_edge_targetTonode edge[] @relation("edge_targetTonode")
+  edge_edge_sourceTonode edge[] @relation("edge_sourceTonode")
+  path_path_targetTonode path[] @relation("path_targetTonode")
+  path_path_sourceTonode path[] @relation("path_sourceTonode")
+  tree                   tree[]
+}
+
+model path {
+  id                     Int    @id @default(autoincrement())
+  source                 String
+  target                 String
+  appendTo               Int?
+  distance               Int    @default(-1)
+  visited                Int    @default(0)
+  path                   path?  @relation("pathTopath", fields: [appendTo], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_path             path[] @relation("pathTopath")
+  node_path_targetTonode node   @relation("path_targetTonode", fields: [target], references: [name], onDelete: NoAction, onUpdate: NoAction)
+  node_path_sourceTonode node   @relation("path_sourceTonode", fields: [source], references: [name], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([distance], map: "path_dst")
+  @@index([source], map: "path_src")
+  @@index([target], map: "path_tgt")
+  @@index([source, target], map: "path_src_tgt")
+}
+
+model tree {
+  id           Int    @id @default(autoincrement())
+  rootNode     String
+  fetchedDepth Int    @default(0)
+  node         node   @relation(fields: [rootNode], references: [name], onDelete: NoAction, onUpdate: NoAction)
+}
